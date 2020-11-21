@@ -1,82 +1,86 @@
-// Based on https://www.pzuraq.com/how-autotracking-works/
+import { createTag, consumeTag, dirtyTag } from './tag';
+import type { Tag } from './tag';
 
-type Revision = number;
-
-let CURRENT_REVISION: Revision = 0;
-
-//////////
-
-const REVISION = Symbol('REVISION');
-
-class Tag {
-  [REVISION] = CURRENT_REVISION;
-}
-
-export function createTag() {
-  return new Tag();
-}
-
-//////////
-
-let onTagDirtied = () => {};
-
-export function setOnTagDirtied(callback: () => void) {
-  onTagDirtied = callback;
-}
-
-export function dirtyTag(tag: Tag) {
-  if (currentComputation && currentComputation.has(tag)) {
-    throw new Error('Cannot dirty tag that has been used during a computation');
-  }
-
-  tag[REVISION] = ++CURRENT_REVISION;
-  onTagDirtied();
-}
-
-//////////
-
-let currentComputation: null | Set<Tag> = null;
-
-export function consumeTag(tag: Tag) {
-  if (currentComputation !== null) {
-    currentComputation.add(tag);
-  }
-}
-
-function getMax(tags: Tag[]) {
-  return Math.max(...tags.map(t => t[REVISION]));
-}
-
-export function memoizeFunction<T>(fn: () => T): () => T {
-  let lastValue: T | undefined;
-  let lastRevision: Revision | undefined;
-  let lastTags: Tag[] | undefined;
-
-  return () => {
-    if (lastTags && getMax(lastTags) === lastRevision) {
-      if (currentComputation && lastTags.length > 0) {
-        lastTags.forEach(tag => currentComputation?.add(tag));
+export function ref<T>(initialValue: T) {
+  const tag = createTag();
+  let value = initialValue;
+  const self = {
+    get current() {
+      consumeTag(tag);
+      return value;
+    },
+    set current(newValue) {
+      if (!Object.is(value, newValue)) {
+        dirtyTag(tag);
       }
-
-      return lastValue as T;
+      value = newValue;
+    },
+    update(fn: (value: T) => T) {
+        self.current = fn(value);
     }
-
-    let previousComputation = currentComputation;
-    currentComputation = new Set();
-
-    try {
-      lastValue = fn();
-    } finally {
-      lastTags = Array.from(currentComputation);
-      lastRevision = getMax(lastTags);
-
-      if (previousComputation && lastTags.length > 0) {
-        lastTags.forEach(tag => previousComputation?.add(tag));
-      }
-
-      currentComputation = previousComputation;
-    }
-
-    return lastValue;
   };
+  return self;
+}
+
+export function reactive<T extends object>(initialValue: T): T {
+  const tagMap: Record<string, Tag> = {};
+  const keyTag = createTag();
+  return new Proxy<T>(initialValue, {
+    get(target: T, prop: string | number, receiver: any) {
+      if (!tagMap[prop]) {
+        tagMap[prop] = createTag();
+      }
+      consumeTag(tagMap[prop]);
+      return Reflect.get(target, prop, receiver);
+    },
+    set(target: T, prop: string | number, value: any, receiver: any) {
+      if (!tagMap[prop]) {
+        tagMap[prop] = createTag();
+        dirtyTag(keyTag);
+      }
+      const oldValue = Reflect.get(target, prop, receiver);
+      if (!Object.is(oldValue, value)) {
+        // TODO: Do I really need to dirty a tag that was just created? When would that be necessary?
+        dirtyTag(tagMap[prop]);
+      }
+      return Reflect.set(target, prop, value, receiver);
+    },
+    ownKeys(target: T) {
+      consumeTag(keyTag);
+      return Reflect.ownKeys(target);
+    },
+    deleteProperty(target: T, prop: string | number) {
+      dirtyTag(keyTag);
+      if (tagMap[prop]) {
+        dirtyTag(tagMap[prop]);
+      }
+      return Reflect.deleteProperty(target, prop);
+    },
+    has(target: T, prop: string | number) {
+      if (!tagMap[prop]) {
+        tagMap[prop] = createTag();
+      }
+      consumeTag(tagMap[prop]);
+      return Reflect.has(target, prop);
+    },
+  });
+}
+
+export function toRefs(store: any): any {
+  return Object.keys(store).reduce((obj: Record<string, any>, prop: any) => {
+    Object.defineProperty(obj, prop, {
+      configurable: false,
+      enumerable: true,
+      writable: false,
+      value: {
+        get current() {
+          return store[prop];
+        },
+        set current(value) {
+          store[prop] = value;
+        },
+      },
+    });
+    return obj;
+  }, {} as Record<string, any>);
 }
