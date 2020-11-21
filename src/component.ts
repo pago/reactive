@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
 import { derive, reactive } from './index';
 import type { Subscription } from './index';
@@ -49,4 +49,16 @@ export function wrap<T extends object>(construct: (props: T) => RenderFunction |
 
         return render.current();
     };
+}
+
+const map = new WeakMap();
+export function createElement(type: any, ...rest: any[]) {
+    if (!('prototype' in type && type.prototype.render)) {
+        // it's a function component
+        if (!map.has(type)) {
+            map.set(type, wrap(type));
+        }
+        type = map.get(type);
+    }
+    return React.createElement(type, ...rest);
 }

@@ -1,3 +1,5 @@
+/** @jsxImportSource ../src */
+
 import React from 'react';
 import { Meta, Story } from '@storybook/react';
 
@@ -23,7 +25,7 @@ function useCounterViewModel(props) {
   };
 }
 
-const Counter = wrap(function Counter(props: Props) {
+function Counter(props: Props) {
   const counterModel = useCounterViewModel(props);
 
   return () => (
@@ -39,7 +41,7 @@ const Counter = wrap(function Counter(props: Props) {
       </div>
     </div>
   );
-});
+}
 
 const meta: Meta<Props> = {
   title: 'Advanced Counter',

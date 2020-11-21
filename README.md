@@ -8,13 +8,14 @@ If you like the idea, then help to make it production ready so everybody can sta
 ### A Counter component
 
 ```tsx
+/** @jsxImportSource @pago/reactive */
 import { wrap, ref } from '../src';
 
 interface Props {
   step: number;
 }
 
-const Counter = wrap(function Counter(props: Props) {
+function Counter(props: Props) {
   const count = ref(0);
 
   return () => (
@@ -30,12 +31,13 @@ const Counter = wrap(function Counter(props: Props) {
       </div>
     </div>
   );
-});
+}
 ```
 
 ### A Timer component
 
 ```tsx
+/** @jsxImportSource @pago/reactive */
 import { wrap, ref, observe } from '@pago/reactive';
 
 interface Props {
@@ -43,7 +45,7 @@ interface Props {
   delay: number;
 }
 
-const Timer = wrap(function Timer(props: Props) {
+function Timer(props: Props) {
   const count = ref(0);
 
   observe(function incrementEffect() {
@@ -60,7 +62,7 @@ const Timer = wrap(function Timer(props: Props) {
       <div>Count: {count.current}</div>
     </div>
   );
-});
+}
 ```
 
 ## Better integration
