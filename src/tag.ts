@@ -59,7 +59,6 @@ export function dirtyTag(tag: Tag) {
 
   tag[REVISION] = ++CURRENT_REVISION;
   if (tag.subscriptions.size > 0) {
-      console.log(`Scheduling an update`);
       schedule(tag);
   }
 }
