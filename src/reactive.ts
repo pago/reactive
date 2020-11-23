@@ -5,8 +5,12 @@ export interface Ref<T> {
   update(fn: (value: T) => T): void;
 }
 
+export interface ImmutableRef<T> {
+  readonly current: T;
+}
+
 export type RefContainer<T> = {
-  readonly [P in keyof T]: Ref<T[P]>;
+  readonly [P in keyof T]: ImmutableRef<T[P]>;
 };
 
 export function ref<T>(initialValue: T): Ref<T> {
@@ -78,19 +82,34 @@ export function toRefs<T extends { [key: string]: any }>(
   store: T
 ): RefContainer<T> {
   return Object.keys(store).reduce((obj: RefContainer<T>, prop: string) => {
+    const value: Ref<any> = {
+      get current() {
+        return store[prop];
+      },
+      set current(value) {
+        ((store as unknown) as any)[prop] = value;
+      },
+      update() {
+        throw new Error('Not sure how to implement this...');
+      },
+    };
     Object.defineProperty(obj, prop, {
       configurable: false,
       enumerable: true,
       writable: false,
-      value: {
-        get current() {
-          return store[prop];
-        },
-        set current(value) {
-          ((store as unknown) as any)[prop] = value;
-        },
-      },
+      value,
     });
     return obj;
   }, {} as RefContainer<T>);
+}
+
+export function toRef<T extends object, K extends keyof T>(store: T, prop: K) {
+  return {
+    get current() {
+      return store[prop];
+    },
+    set current(value: T[K]) {
+      store[prop] = value;
+    },
+  };
 }
