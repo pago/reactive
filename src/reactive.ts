@@ -1,4 +1,4 @@
-import {createTag, consumeTag, dirtyTag, Tag, memoize} from './tag';
+import { createTag, consumeTag, dirtyTag, Tag, memoize } from './tag';
 
 export interface Ref<T> {
   current: T;
@@ -122,6 +122,6 @@ export function derived<T>(fn: () => T): ImmutableRef<T> {
   return {
     get current() {
       return calculator();
-    }
-  }
+    },
+  };
 }
