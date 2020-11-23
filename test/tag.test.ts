@@ -1,8 +1,8 @@
-import { consumeTag, dirtyTag, createTag, derive } from '../src/tag';
+import { consumeTag, dirtyTag, createTag, memoize } from '../src/tag';
 
 describe('tag', () => {
   test('it memoizes the function', () => {
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return {};
     });
     const firstValue = fn();
@@ -12,7 +12,7 @@ describe('tag', () => {
 
   test('when an unused tag is dirtied the return value is still cached', () => {
     const tag = createTag();
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return {};
     });
     const firstValue = fn();
@@ -23,7 +23,7 @@ describe('tag', () => {
 
   test('it executes the function again when a dirty tag is consumed', () => {
     const tag = createTag();
-    const fn = derive(() => {
+    const fn = memoize(() => {
       consumeTag(tag);
       return {};
     });

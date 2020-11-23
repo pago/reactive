@@ -1,4 +1,4 @@
-import { readable, derive } from '../src/';
+import { readable, memoize } from '../src/';
 import { delay } from './util';
 
 describe('readable', () => {
@@ -10,7 +10,7 @@ describe('readable', () => {
         resolve();
       }, 0);
     });
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return `${message.current} World!`;
     });
     expect(fn()).toEqual('Hello World!');

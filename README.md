@@ -1,21 +1,58 @@
 # @pago/reactive
 
-This is a prototype / an experiment. Using this in production should get you fired.
-If you like the idea, then help to make it production ready so everybody can start using it!
+You are using React or Preact but find yourself frustrated by continuous bugs, errors or ceremony caused by
+the Hooks API? You thought you could avoid using a separate state management library like Redux, Recoil or MobX
+but started to run into unexpected performance issues with the Context API?
+
+Then this library will eventually be the one for you! A reactive component model on top of React and Preact
+with automatic performance optimizations and a simple and predictable API that gets out of your way and supports
+you in achieving your goals. Blatantly copied from the fantastic Vue Composition API. But for React / Preact.
+
+Huh? Eventually? Oh yes, this thing is bleeding cutting edge and likely to cause you all kinds of pain right now.
+Please don't use this in production. We are looking for feedback and observations from experiments you run.
+We fully expect to change major parts of the API in various different ways while we try to find the right set
+of primitives and abstractions to have a good balance between power and ease of learning.
+
+## Project Plan
+We are roughly following planning to go through the following steps:
+
+- [x] Make it work
+- [ ] Make it good (<-- we are here)
+- [ ] Make it fast
+- [ ] Make it small
+- [ ] Stable release
+
+## Current Status
+- [x] Works with Preact & React
+- [x] Very little boilerplate on top of React (JS: none, TS: minimal `r`)
+- [x] Observable values
+- [x] Efficient derived values
+- [x] Works with Suspense
+- [x] Works with React.Context (through `inject`)
+- [x] Doesn't show any wrapper components in React DevTools
+- [x] Perfect for incremental adoption into existing projects (use the pragma comment for per-file adoption)
+- [ ] `ref` has an `update` method when deriving a new value from an old. If it sticks, it should be possible to use with `reactive`, `toRef` and `toRefs` as well. The current `reactive` implementation is mostly needed for `props` handling (readonly).
+- [ ] Related to the above: `reactive` in Vue accepts and bends over `ref` values. Should we do the same? How would that look like in TypeScript?
+- [ ] TypeScript: Do we really need `r`? Can we adapt the `JSX.Element['type']` property to include our kind of components?
+- [ ] Do we want React Hooks interop? Can we have it? (special implementation for Context, similar concept should work with everything else, too)
+- [ ] If we want to have an excellent incremental adoption strategy, do we also need a Hook that takes a `ref` to enable usage in Hooks components?
+- [ ] Lifecycle callbacks (do we really need them?)
+- [ ] Svelte-style store API (drop it? merge useful aspects in?)
+- [ ] Rx.js interop? Useful?
+- [ ] Optimized Preact implementation (by tapping into its plugin API)
+- [ ] Documentation
+- [ ] Consistent naming of things (so far copied Vue API for a lot of things - do the names match & make sense in this context?)
+- [ ] Optimization (Performance & Code Size)
 
 ## Examples
 
 ### A Counter component
 
-```tsx
+```jsx
 /** @jsxImportSource @pago/reactive */
-import { wrap, ref } from '../src';
+import { ref } from '@pago/reactive';
 
-interface Props {
-  step: number;
-}
-
-function Counter(props: Props) {
+function Counter(props) {
   const count = ref(0);
 
   return () => (
@@ -38,7 +75,7 @@ function Counter(props: Props) {
 
 ```tsx
 /** @jsxImportSource @pago/reactive */
-import { wrap, ref, observe } from '@pago/reactive';
+import { r, ref, observe } from '@pago/reactive';
 
 interface Props {
   step: number;
@@ -57,140 +94,48 @@ function Timer(props: Props) {
     return () => clearInterval(timer);
   });
 
-  return () => (
+  return r(() => (
     <div>
       <div>Count: {count.current}</div>
     </div>
-  );
+  ));
 }
 ```
 
-## Better integration
+## Setup
+The easiest way to setup `@pago/reactive` for either React or Preact is to leverage the new `jsxImportSource` option and to set it to `@pago/reactive`.
 
-At the moment reactive components have to be wrapped using the `wrap` function. That leads to imperfect code and causes code using `@pago/reactive` to
-lack the clarity of native React/Preact function components.
-However, there should be some ways to make `@pago/reactive` a first-class solution in both Preact and React.
+Requirements:
+- React 17 or later
+- or Preact (todo: insert correct version)
+- Babel (todo: insert correct version)
+- or TypeScript (todo: insert correct version)
 
-The difference we're looking for:
+### Per file
+Specifying `@pago/reactive` as the JSX factory can be done using a comment at the beginning of the file. This should be supported by Babel & TypeScript.
 
-Before:
-
-```jsx
-import { ref, observe } from '@pago/reactive';
-
-const CounterComponent = wrap(function CounterComponent() {
-  const el = ref();
-  observe(function updateDOMManually() {
-    // `observe` is currently invoked immediately, rather than at the next tick
-    // not sure if that behaviour is better or worse than delaying it a bit
-    if (!el.current) return;
-    el.current.innerHTML = 'Hello World';
-  });
-  return () => <div ref={el}></div>;
-});
+```js
+/** @jsxImportSource @pago/reactive */
 ```
 
-After:
+### Babel
 
-```jsx
-import { ref, observe } from '@pago/reactive';
-
-function CounterComponent() {
-  const el = ref();
-  observe(function updateDOMManually() {
-    // `observe` is currently invoked immediately, rather than at the next tick
-    // not sure if that behaviour is better or worse than delaying it a bit
-    if (!el.current) return;
-    el.current.innerHTML = 'Hello World';
-  });
-  return () => <div ref={el}></div>;
+As specified in [the babel documentation](https://babeljs.io/docs/en/babel-plugin-transform-react-jsx):
+```json
+{
+  "plugins": [
+    [
+      "@babel/plugin-transform-react-jsx",
+      {
+        "runtime": "automatic",
+        "importSource": "@pago/reactive"
+      }
+    ]
+  ]
 }
 ```
 
-### Ideal Preact integration
 
-Preact is currently using the following logic to convert function components into class based components:
-
-```js
-// Instantiate the new component
-if ('prototype' in newType && newType.prototype.render) {
-  newVNode._component = c = new newType(newProps, componentContext); // eslint-disable-line new-cap
-} else {
-  newVNode._component = c = new Component(newProps, componentContext);
-  c.constructor = newType;
-  c.render = doRender;
-}
-```
-
-(Source: https://github.com/preactjs/preact/blob/master/src/diff/index.js#L103)
-
-With `doRender` implemented like so:
-
-```js
-/** The `.render()` method for a PFC backing instance. */
-function doRender(props, state, context) {
-  return this.constructor(props, context);
-}
-```
-
-(Source: https://github.com/preactjs/preact/blob/master/src/diff/index.js#L523)
-
-If Preacts `options` hooks included one for converting function components to class components, then it would be possible
-to implement a version of it that invokes `wrap` on it during the conversion. For example:
-
-```js
-// Instantiate the new component
-if ('prototype' in newType && newType.prototype.render) {
-  newVNode._component = c = new newType(newProps, componentContext); // eslint-disable-line new-cap
-} else {
-  newVNode._component = c = new Component(newProps, componentContext);
-  c.constructor = newType;
-  c.render = (options._wrapRender && options._wrapRender(doRender)) || doRender;
-}
-```
-
-would enable us to implement it as
-
-```js
-import { options } from 'preact';
-import { wrap } from '@pago/reactive';
-
-options._wrapRender = wrap;
-```
-
-### Preact: Potential performance impact
-
-Impact on performance needs to be measured. The following code has not been tested yet and needs to be verified first.
-
-```js
-import { options } from 'preact';
-import { wrap } from '@pago/reactive';
-
-const oldVNode = options.vnode;
-const map = new WeakMap();
-options.vnode = vnode => {
-  if (oldVNode) vnode = oldVNode(vnode);
-  const type = vnode.type;
-  if (!('prototype' in type && type.prototype.render)) {
-    // it's a function component
-    if (!map.has(type)) {
-      map.set(type, wrap(type));
-    }
-    vnode.type = map.get(type);
-  }
-  return vnode;
-};
-```
-
-### Potential React integration
-
-For React it seems like the only suitable solution would be to use a custom JSX pragma that performs a similar operation to the above before delegating to React.
-Performance might be impacted. An alternative could be a very smart Babel plugin that recognizes reactive function components using a logic similar to this:
-
-If a function returns a function and either of them leverage JSX within their bodies, then `wrap` the outer function.
-
-That solution would work for both Preact and React and should avoid any negative performance impact. There is a chance that it might miss function components
-that delegate their rendering to an outside function. But that should be incredibly unlikely.
 
 ## Q & A
 
@@ -215,4 +160,57 @@ function CounterComponent() {
   });
   return () => <div ref={el}></div>;
 }
+```
+
+### Why does TypeScript complain about components not being components?
+
+When you try to use a component like the one below with TypeScript in JSX, it'll inform you that
+`() => Element` is not a valid type for a JSX Element.
+```tsx
+import { ref, observe } from '@pago/reactive';
+
+function CounterComponent() {
+  const el = ref();
+  observe(function updateDOMManually() {
+    // `observe` is currently invoked immediately, rather than at the next tick
+    // not sure if that behaviour is better or worse than delaying it a bit
+    if (!el.current) return;
+    el.current.innerHTML = 'Hello World';
+  });
+  return () => <div ref={el}></div>;
+}
+```
+
+For the time being we don't have a better solution than to use the provided `r` function, which is basically
+a type cast that fakes the right type to make TypeScript happy.
+
+```tsx
+import { r, ref, observe } from '@pago/reactive';
+
+function CounterComponent() {
+  const el = ref();
+  observe(function updateDOMManually() {
+    // `observe` is currently invoked immediately, rather than at the next tick
+    // not sure if that behaviour is better or worse than delaying it a bit
+    if (!el.current) return;
+    el.current.innerHTML = 'Hello World';
+  });
+  return r(() => <div ref={el}></div>);
+}
+```
+
+An alternative would be to use the `wrap` function explicitly.
+
+```tsx
+import { wrap, ref, observe } from '@pago/reactive';
+const CounterComponent = wrap(function CounterComponent() {
+  const el = ref();
+  observe(function updateDOMManually() {
+    // `observe` is currently invoked immediately, rather than at the next tick
+    // not sure if that behaviour is better or worse than delaying it a bit
+    if (!el.current) return;
+    el.current.innerHTML = 'Hello World';
+  });
+  return () => <div ref={el}></div>;
+});
 ```

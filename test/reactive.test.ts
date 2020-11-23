@@ -1,10 +1,10 @@
-import { derive, ref, reactive, toRefs, observe } from '../src/index';
+import { memoize, ref, reactive, toRefs, observe, derived } from '../src/index';
 import { delay } from './util';
 
-describe('derive', () => {
+describe('memoize', () => {
   test('it executes the function again when a ref is modified', () => {
     const state = ref('World');
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return `Hello ${state.current}!`;
     });
 
@@ -15,7 +15,7 @@ describe('derive', () => {
 
   test('it avoids execution of the function when a ref is modified but its value is unchanged', () => {
     const state = ref('World');
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return { message: state.current };
     });
 
@@ -33,7 +33,7 @@ describe('derive', () => {
     const state = reactive({
       target: 'World',
     });
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return `Hello ${state.target}!`;
     });
 
@@ -46,7 +46,7 @@ describe('derive', () => {
     const state = reactive<{ target: string; greeting?: string }>({
       target: 'World',
     });
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return Object.keys(state);
     });
 
@@ -62,7 +62,7 @@ describe('derive', () => {
     const state = reactive<{ target: string; greeting?: string }>({
       target: 'World',
     });
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return `${'greeting' in state ? state.greeting : 'Hello'} ${
         state.target
       }`;
@@ -83,7 +83,7 @@ describe('derive', () => {
         return target.current;
       },
     });
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return `${'greeting' in state ? state.greeting : 'Hello'} ${
         state.target
       }`;
@@ -103,7 +103,7 @@ describe('derive', () => {
       greeting: 'Hello',
     });
     const { target, greeting } = toRefs(state);
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return `${greeting.current} ${target.current}`;
     });
 
@@ -148,7 +148,7 @@ describe('derive', () => {
       const { signal, resolve } = delay();
       const x = ref(0);
       const y = ref(0);
-      let currentValue = ref(0);
+      const currentValue = ref(0);
       observe(() => {
         currentValue.update(curr => curr + x.current + y.current);
       });
@@ -227,5 +227,20 @@ describe('derive', () => {
       unsubscribe();
       expect(cleanupInvoked).toBe(true);
     });
+  });
+});
+
+describe('derived', () => {
+  test('returns the initial value', () => {
+    const x = ref(2);
+    const double = derived(() => x.current * 2);
+    expect(double.current).toBe(4);
+  });
+
+  test('keeps the value up to date', () => {
+    const x = ref(2);
+    const double = derived(() => x.current * 2);
+    x.current = 4;
+    expect(double.current).toBe(8);
   });
 });

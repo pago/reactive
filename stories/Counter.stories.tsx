@@ -3,16 +3,16 @@
 import React from 'react';
 import { Meta, Story } from '@storybook/react';
 
-import { wrap, ref } from '../src';
+import { r, ref } from '../src';
 
 interface Props {
   step: number;
 }
 
-const Counter = wrap(function Counter(props: Props) {
+function Counter(props: Props) {
   const count = ref(0);
 
-  return () => (
+  return r(() => (
     <div>
       <div>Count: {count.current}</div>
       <div>
@@ -24,8 +24,8 @@ const Counter = wrap(function Counter(props: Props) {
         </button>
       </div>
     </div>
-  );
-});
+  ));
+}
 
 const meta: Meta<Props> = {
   title: 'Counter',

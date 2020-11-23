@@ -1,8 +1,7 @@
-import { createTag, consumeTag, dirtyTag, Tag } from './tag';
+import {createTag, consumeTag, dirtyTag, Tag, memoize} from './tag';
 
 export interface Ref<T> {
   current: T;
-  update(fn: (value: T) => T): void;
 }
 
 export interface ImmutableRef<T> {
@@ -10,10 +9,14 @@ export interface ImmutableRef<T> {
 }
 
 export type RefContainer<T> = {
-  readonly [P in keyof T]: ImmutableRef<T[P]>;
+  readonly [P in keyof T]: Ref<T[P]>;
 };
 
-export function ref<T>(initialValue: T): Ref<T> {
+export interface RefObject<T> extends Ref<T> {
+  update(fn: (value: T) => T): void;
+}
+
+export function ref<T>(initialValue: T): RefObject<T> {
   const tag = createTag();
   let value = initialValue;
   const self = {
@@ -89,9 +92,6 @@ export function toRefs<T extends { [key: string]: any }>(
       set current(value) {
         ((store as unknown) as any)[prop] = value;
       },
-      update() {
-        throw new Error('Not sure how to implement this...');
-      },
     };
     Object.defineProperty(obj, prop, {
       configurable: false,
@@ -103,7 +103,10 @@ export function toRefs<T extends { [key: string]: any }>(
   }, {} as RefContainer<T>);
 }
 
-export function toRef<T extends object, K extends keyof T>(store: T, prop: K) {
+export function toRef<T extends object, K extends keyof T>(
+  store: T,
+  prop: K
+): Ref<T[K]> {
   return {
     get current() {
       return store[prop];
@@ -112,4 +115,13 @@ export function toRef<T extends object, K extends keyof T>(store: T, prop: K) {
       store[prop] = value;
     },
   };
+}
+
+export function derived<T>(fn: () => T): ImmutableRef<T> {
+  const calculator = memoize(fn);
+  return {
+    get current() {
+      return calculator();
+    }
+  }
 }

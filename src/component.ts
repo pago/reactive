@@ -8,7 +8,7 @@ import React, {
   Context,
   ReactElement,
 } from 'react';
-import { derive, reactive, ref, Subscription } from './index';
+import { memoize, reactive, ref, Subscription } from './index';
 import { mergePropsIntoReactive } from './utils';
 import { collectSubscriptions } from './tag';
 
@@ -65,7 +65,7 @@ export function wrap<T extends object>(
             isReactiveComponent.current = false;
             render.current = () => doRender;
           } else {
-            render.current = derive(
+            render.current = memoize(
               doRender,
               function dependenciesInvalidated() {
                 forceRender(x => x + 1);

@@ -1,4 +1,4 @@
-import { reactive, derive } from '../src';
+import { reactive, memoize } from '../src';
 import { mergePropsIntoReactive } from '../src/utils';
 
 describe('mergePropsIntoReactive', () => {
@@ -6,7 +6,7 @@ describe('mergePropsIntoReactive', () => {
     const props = reactive({
       hello: 'world',
     });
-    const serialize = derive(() => {
+    const serialize = memoize(() => {
       return JSON.stringify(props);
     });
     expect(serialize()).toEqual(JSON.stringify({ hello: 'world' }));
@@ -20,7 +20,7 @@ describe('mergePropsIntoReactive', () => {
     const props = reactive<{ hello: string; message?: string }>({
       hello: 'world',
     });
-    const serialize = derive(() => {
+    const serialize = memoize(() => {
       return JSON.stringify(props);
     });
     expect(serialize()).toEqual(JSON.stringify({ hello: 'world' }));
@@ -38,7 +38,7 @@ describe('mergePropsIntoReactive', () => {
       hello: 'world',
       message: 'hello',
     });
-    const serialize = derive(() => {
+    const serialize = memoize(() => {
       return JSON.stringify(props);
     });
     expect(serialize()).toEqual(
@@ -54,7 +54,7 @@ describe('mergePropsIntoReactive', () => {
     const props = reactive({
       hello: 'world',
     });
-    const fn = derive(() => {
+    const fn = memoize(() => {
       return { message: props.hello };
     });
     const firstValue = fn();

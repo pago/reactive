@@ -77,7 +77,7 @@ function getMax(tags: Tag[]) {
   return Math.max(...tags.map(t => t[REVISION]));
 }
 
-export function derive<T>(fn: () => T, effect?: Effect): () => T {
+export function memoize<T>(fn: () => T, effect?: Effect): () => T {
   let lastValue: T | undefined;
   let lastRevision: Revision | undefined;
   let lastTags: Tag[] | undefined;
