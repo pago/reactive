@@ -4,7 +4,7 @@ import { wrap } from './component';
 const map = new WeakMap();
 export function jsx(type: any, ...rest: any[]) {
   if (
-    typeof type !== 'string' &&
+    typeof type === 'function' &&
     !('prototype' in type && type.prototype.render)
   ) {
     // it's a function component

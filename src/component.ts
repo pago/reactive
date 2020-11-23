@@ -17,10 +17,14 @@ export function wrap<T extends object>(construct: (props: T) => RenderFunction |
         const render = useRef() as MutableRefObject<RenderFunction>;
         const subscriptions = useRef() as MutableRefObject<Array<Subscription>>;
 
-        useEffect(function cleanup() {
-            return () => subscriptions.current?.forEach(subscription => {
+        function cleanupSubscriptions() {
+            subscriptions.current?.forEach(subscription => {
                 subscription.unsubscribe();
             });
+        }
+
+        useEffect(function cleanup() {
+            return cleanupSubscriptions;
         }, []);
 
         if (!isReactiveComponent.current) {
@@ -40,14 +44,23 @@ export function wrap<T extends object>(construct: (props: T) => RenderFunction |
                     isReactiveComponent.current = false;
                     render.current = () => doRender;
                 } else {
-                    render.current = derive(doRender, () => {
+                    render.current = derive(doRender, function dependenciesInvalidated() {
                         forceRender(x => x + 1);
                     });
                 }
             });
         }
 
-        return render.current();
+        let success = false;
+        try {
+            const renderResult = render.current();
+            success = true;
+            return renderResult;
+        } finally {
+            if (!success) {
+                cleanupSubscriptions();
+            }
+        }
     };
 }
 

@@ -124,22 +124,30 @@ export interface Subscription {
 let subscriptions: Array<Subscription> | undefined;
 export function collectSubscriptions<T>(fn: () => T) {
     const oldSubscriptions = subscriptions;
-    let subs = subscriptions = [];
+    let subs = subscriptions = [] as Array<Subscription>;
     let previousComputation = currentComputation;
     currentComputation = new Set();
+    let success = false;
     try {
       fn();
+      success = true;
     } finally {
-      const lastTags = Array.from(currentComputation);
+      if (success) {
+        const lastTags = Array.from(currentComputation);
 
-      if (lastTags.length > 0) {
-        lastTags.forEach(tag => {
-            previousComputation?.add(tag)
-        });
+        if (lastTags.length > 0) {
+          lastTags.forEach(tag => {
+              previousComputation?.add(tag)
+          });
+        }
+      } else {
+        // execution failed, cleanup subscriptions
+        subs.forEach(subscription => subscription.unsubscribe());
+        subs = [];
       }
+      subscriptions = oldSubscriptions;
+      currentComputation = previousComputation;
     }
-    subscriptions = oldSubscriptions;
-    currentComputation = previousComputation;
     return subs;
 }
 
@@ -147,7 +155,17 @@ export function observe(fn: () => Effect | void): Subscription {
   let lastTags: Tag[] | undefined;
   let cleanup: Effect | undefined;
 
-  const effect = () => {
+  const subscription = {
+      unsubscribe() {
+          lastTags?.forEach(tag => {
+              tag.unsubscribe(effect);
+          });
+          cleanup?.();
+      }
+  };
+  subscriptions?.push(subscription);
+
+  function effect() {
     cleanup?.();
     let previousComputation = currentComputation;
     currentComputation = new Set();
@@ -170,18 +188,9 @@ export function observe(fn: () => Effect | void): Subscription {
 
       currentComputation = previousComputation;
     }
-  };
+  }
 
   effect();
 
-  const subscription = {
-      unsubscribe() {
-          lastTags?.forEach(tag => {
-              tag.unsubscribe(effect);
-          });
-          cleanup?.();
-      }
-  };
-  subscriptions?.push(subscription);
   return subscription;
 }

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Meta, Story } from '@storybook/react';
 
-import { wrap, ref } from '../src';
+import { ref } from '../src';
 
 interface Props {
   step: number;
