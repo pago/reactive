@@ -1,5 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from 'react/jsx-runtime';
 import { wrap } from './component';
+import { createElement as _createElement } from 'react';
 
 const map = new WeakMap();
 export function jsx(type: any, ...rest: any[]) {
@@ -31,12 +32,15 @@ export function jsxs(type: any, ...rest: any[]) {
 }
 
 export function createElement(type: any, ...rest: any[]) {
-  if (!('prototype' in type && type.prototype.render)) {
+  if (
+    typeof type === 'function' &&
+    !('prototype' in type && type.prototype.render)
+  ) {
     // it's a function component
     if (!map.has(type)) {
       map.set(type, wrap(type));
     }
     type = map.get(type);
   }
-  return React.createElement(type, ...rest);
+  return _createElement(type, ...rest);
 }

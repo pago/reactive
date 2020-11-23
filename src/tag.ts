@@ -11,24 +11,24 @@ const REVISION = Symbol('REVISION');
 const scheduledTags = new Set<Tag>();
 let nextTick: Promise<void> | null = null;
 function schedule(tag: Tag) {
-    scheduledTags.add(tag);
-    if (!nextTick) {
-        nextTick = Promise.resolve().then(drainQueue);
-    }
+  scheduledTags.add(tag);
+  if (!nextTick) {
+    nextTick = Promise.resolve().then(drainQueue);
+  }
 }
 
 function drainQueue() {
-    nextTick = null;
-    const scheduledEffects = new Set<Effect>();
-    scheduledTags.forEach(tag => {
-        tag.subscriptions.forEach(effect => scheduledEffects.add(effect));
-    });
-    scheduledTags.clear();
-    scheduledEffects.forEach(effect => effect());
+  nextTick = null;
+  const scheduledEffects = new Set<Effect>();
+  scheduledTags.forEach(tag => {
+    tag.subscriptions.forEach(effect => scheduledEffects.add(effect));
+  });
+  scheduledTags.clear();
+  scheduledEffects.forEach(effect => effect());
 }
 
 interface Effect {
-    (): void;
+  (): void;
 }
 
 class Tag {
@@ -36,11 +36,11 @@ class Tag {
   subscriptions = new Set<Effect>();
 
   subscribe(effect: Effect) {
-      this.subscriptions.add(effect);
+    this.subscriptions.add(effect);
   }
 
   unsubscribe(effect: Effect) {
-      this.subscriptions.delete(effect);
+    this.subscriptions.delete(effect);
   }
 }
 
@@ -48,7 +48,7 @@ export function createTag() {
   return new Tag();
 }
 
-export type { Tag };
+export { Tag };
 
 //////////
 
@@ -59,7 +59,7 @@ export function dirtyTag(tag: Tag) {
 
   tag[REVISION] = ++CURRENT_REVISION;
   if (tag.subscriptions.size > 0) {
-      schedule(tag);
+    schedule(tag);
   }
 }
 
@@ -97,16 +97,16 @@ export function derive<T>(fn: () => T, effect?: Effect): () => T {
     try {
       lastValue = fn();
     } finally {
-        if (effect && lastTags) {
-            lastTags.forEach(tag => tag.unsubscribe(effect));
-        }
+      if (effect && lastTags) {
+        lastTags.forEach(tag => tag.unsubscribe(effect));
+      }
       lastTags = Array.from(currentComputation);
       lastRevision = getMax(lastTags);
 
       if ((previousComputation || effect) && lastTags.length > 0) {
         lastTags.forEach(tag => {
-            if (previousComputation) previousComputation.add(tag)
-            if (effect) tag.subscribe(effect);
+          if (previousComputation) previousComputation.add(tag);
+          if (effect) tag.subscribe(effect);
         });
       }
 
@@ -118,37 +118,37 @@ export function derive<T>(fn: () => T, effect?: Effect): () => T {
 }
 
 export interface Subscription {
-    unsubscribe(): void;
+  unsubscribe(): void;
 }
 
 let subscriptions: Array<Subscription> | undefined;
 export function collectSubscriptions<T>(fn: () => T) {
-    const oldSubscriptions = subscriptions;
-    let subs = subscriptions = [] as Array<Subscription>;
-    let previousComputation = currentComputation;
-    currentComputation = new Set();
-    let success = false;
-    try {
-      fn();
-      success = true;
-    } finally {
-      if (success) {
-        const lastTags = Array.from(currentComputation);
+  const oldSubscriptions = subscriptions;
+  let subs = (subscriptions = [] as Array<Subscription>);
+  let previousComputation = currentComputation;
+  currentComputation = new Set();
+  let success = false;
+  try {
+    fn();
+    success = true;
+  } finally {
+    if (success) {
+      const lastTags = Array.from(currentComputation);
 
-        if (lastTags.length > 0) {
-          lastTags.forEach(tag => {
-              previousComputation?.add(tag)
-          });
-        }
-      } else {
-        // execution failed, cleanup subscriptions
-        subs.forEach(subscription => subscription.unsubscribe());
-        subs = [];
+      if (lastTags.length > 0) {
+        lastTags.forEach(tag => {
+          previousComputation?.add(tag);
+        });
       }
-      subscriptions = oldSubscriptions;
-      currentComputation = previousComputation;
+    } else {
+      // execution failed, cleanup subscriptions
+      subs.forEach(subscription => subscription.unsubscribe());
+      subs = [];
     }
-    return subs;
+    subscriptions = oldSubscriptions;
+    currentComputation = previousComputation;
+  }
+  return subs;
 }
 
 export function observe(fn: () => Effect | void): Subscription {
@@ -156,12 +156,12 @@ export function observe(fn: () => Effect | void): Subscription {
   let cleanup: Effect | undefined;
 
   const subscription = {
-      unsubscribe() {
-          lastTags?.forEach(tag => {
-              tag.unsubscribe(effect);
-          });
-          cleanup?.();
-      }
+    unsubscribe() {
+      lastTags?.forEach(tag => {
+        tag.unsubscribe(effect);
+      });
+      cleanup?.();
+    },
   };
   subscriptions?.push(subscription);
 
@@ -181,8 +181,8 @@ export function observe(fn: () => Effect | void): Subscription {
 
       if (lastTags.length > 0) {
         lastTags.forEach(tag => {
-            previousComputation?.add(tag)
-            tag.subscribe(effect);
+          previousComputation?.add(tag);
+          tag.subscribe(effect);
         });
       }
 

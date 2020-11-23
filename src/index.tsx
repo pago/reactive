@@ -1,7 +1,4 @@
-export { derive, observe } from './tag';
+export { derive, observe, Subscription } from './tag';
 export { reactive, ref, toRefs } from './reactive';
-export { readable } from './store';
-export { wrap, createElement } from './component';
-
-export type { Setter } from './store';
-export type { Subscription } from './tag';
+export { readable, Setter } from './store';
+export { wrap, createElement, inject, r } from './component';

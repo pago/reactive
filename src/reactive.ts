@@ -1,7 +1,15 @@
-import { createTag, consumeTag, dirtyTag } from './tag';
-import type { Tag } from './tag';
+import { createTag, consumeTag, dirtyTag, Tag } from './tag';
 
-export function ref<T>(initialValue: T) {
+export interface Ref<T> {
+  current: T;
+  update(fn: (value: T) => T): void;
+}
+
+export type RefContainer<T> = {
+  readonly [P in keyof T]: Ref<T[P]>;
+};
+
+export function ref<T>(initialValue: T): Ref<T> {
   const tag = createTag();
   let value = initialValue;
   const self = {
@@ -16,8 +24,8 @@ export function ref<T>(initialValue: T) {
       value = newValue;
     },
     update(fn: (value: T) => T) {
-        self.current = fn(value);
-    }
+      self.current = fn(value);
+    },
   };
   return self;
 }
@@ -66,8 +74,10 @@ export function reactive<T extends object>(initialValue: T): T {
   });
 }
 
-export function toRefs(store: any): any {
-  return Object.keys(store).reduce((obj: Record<string, any>, prop: any) => {
+export function toRefs<T extends { [key: string]: any }>(
+  store: T
+): RefContainer<T> {
+  return Object.keys(store).reduce((obj: RefContainer<T>, prop: string) => {
     Object.defineProperty(obj, prop, {
       configurable: false,
       enumerable: true,
@@ -77,10 +87,10 @@ export function toRefs(store: any): any {
           return store[prop];
         },
         set current(value) {
-          store[prop] = value;
+          ((store as unknown) as any)[prop] = value;
         },
       },
     });
     return obj;
-  }, {} as Record<string, any>);
+  }, {} as RefContainer<T>);
 }
