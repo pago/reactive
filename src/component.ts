@@ -10,7 +10,7 @@ import React, {
 } from 'react';
 import { memoize, reactive, ref, Subscription } from './index';
 import { mergePropsIntoReactive } from './utils';
-import { collectSubscriptions } from './tag';
+import { collectSubscriptions, SubscriptionController } from './tag';
 
 type RenderResult = ReactElement<any, any> | null;
 type RenderFunction = () => RenderResult;
@@ -31,6 +31,17 @@ export function wrap<T extends object>(
     const render = useRef() as MutableRefObject<RenderFunction>;
     const subscriptions = useRef() as MutableRefObject<Array<Subscription>>;
     const usedContexts = useRef([] as Array<UsedContext<any>>);
+    const [subscriptionController] = useState(
+      () =>
+        new SubscriptionController(function dependenciesInvalidated() {
+          forceRender(x => x + 1);
+        })
+    );
+
+    useEffect(() => {
+      subscriptionController.subscribe();
+      return () => subscriptionController.unsubscribe();
+    }, [subscriptionController]);
 
     const cleanupSubscriptions = useCallback(() => {
       subscriptions.current?.forEach(subscription => {
@@ -65,12 +76,7 @@ export function wrap<T extends object>(
             isReactiveComponent.current = false;
             render.current = () => doRender;
           } else {
-            render.current = memoize(
-              doRender,
-              function dependenciesInvalidated() {
-                forceRender(x => x + 1);
-              }
-            );
+            render.current = memoize(doRender, subscriptionController);
           }
         } finally {
           currentContexts = oldContexts;

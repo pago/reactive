@@ -77,7 +77,67 @@ function getMax(tags: Tag[]) {
   return Math.max(...tags.map(t => t[REVISION]));
 }
 
-export function memoize<T>(fn: () => T, effect?: Effect): () => T {
+export class SubscriptionController {
+  private tags: Array<Tag> = [];
+  private isSubscribed = false;
+  private lastRevision: Revision = 0;
+  effect: Effect;
+  constructor(effect: Effect) {
+    this.effect = effect;
+  }
+
+  setObservedTags(tags: Array<Tag>, lastRevision: Revision) {
+    if (this.isSubscribed) {
+      this.unsubscribeFromTags();
+      this.tags = tags;
+      this.subscribeToTags();
+    } else {
+      this.tags = tags;
+    }
+    this.lastRevision = lastRevision;
+  }
+
+  private subscribeToTags() {
+    this.tags.forEach(tag => tag.subscribe(this.effect));
+  }
+  private unsubscribeFromTags() {
+    this.tags.forEach(tag => tag.unsubscribe(this.effect));
+  }
+
+  subscribe() {
+    if (this.isSubscribed) {
+      return;
+    }
+    this.subscribeToTags();
+    this.isSubscribed = true;
+    // there is a chance that a tag has been updated in between
+    // us starting to observe it and subscribing to it
+    // if that is the case, we will trigger the effect on subscription
+    // to make sure we're always up to date
+    if (getMax(this.tags) > this.lastRevision) {
+      // TODO: Architectural Decision needed (or very good documentation)
+      // I am not 100% whether it is a good idea to run this synchronously
+      // In our Library-usage that would be preferable since `subscribe` is called
+      // during `useEffect` and additional scheduling would just cause unnecessary delays
+      // but in user-land this might be confusing as all other parts of the library trigger
+      // effects async.
+      this.effect();
+    }
+  }
+
+  unsubscribe() {
+    if (!this.isSubscribed) {
+      return;
+    }
+    this.unsubscribeFromTags();
+    this.isSubscribed = false;
+  }
+}
+
+export function memoize<T>(
+  fn: () => T,
+  controller?: SubscriptionController
+): () => T {
   let lastValue: T | undefined;
   let lastRevision: Revision | undefined;
   let lastTags: Tag[] | undefined;
@@ -85,7 +145,7 @@ export function memoize<T>(fn: () => T, effect?: Effect): () => T {
   return () => {
     if (lastTags && getMax(lastTags) === lastRevision) {
       if (currentComputation && lastTags.length > 0) {
-        lastTags.forEach(tag => currentComputation?.add(tag));
+        lastTags.forEach(tag => currentComputation!.add(tag));
       }
 
       return lastValue as T;
@@ -97,18 +157,13 @@ export function memoize<T>(fn: () => T, effect?: Effect): () => T {
     try {
       lastValue = fn();
     } finally {
-      if (effect && lastTags) {
-        lastTags.forEach(tag => tag.unsubscribe(effect));
-      }
       lastTags = Array.from(currentComputation);
       lastRevision = getMax(lastTags);
 
-      if ((previousComputation || effect) && lastTags.length > 0) {
-        lastTags.forEach(tag => {
-          if (previousComputation) previousComputation.add(tag);
-          if (effect) tag.subscribe(effect);
-        });
+      if (lastTags.length > 0 && previousComputation) {
+        lastTags.forEach(tag => previousComputation!.add(tag));
       }
+      if (controller) controller.setObservedTags(lastTags, lastRevision);
 
       currentComputation = previousComputation;
     }

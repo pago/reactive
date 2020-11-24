@@ -3,14 +3,14 @@
 import React, { Suspense } from 'react';
 import { Meta, Story } from '@storybook/react';
 
-import { observe } from '../src';
+import {observe, r, ref} from '../src';
 
 interface Props {}
 
 function getSuspendedValue() {
   //   const value = ref(0);
   const { resolve, signal } = delay();
-  let value;
+  let value: string;
   let isResolved = false;
 
   setTimeout(() => {
@@ -30,20 +30,27 @@ function getSuspendedValue() {
   };
 }
 
-function App(props: Props) {
+function App() {
   const message = getSuspendedValue();
+  const announcement = ref(`"Random" message of the day...`);
 
-  return () => (
+  setTimeout(() => {
+    announcement.current = 'Halfway there...';
+  }, 500)
+
+  return r(() => (
     <div>
-      <h1>"Random" message of the day...</h1>
+      <h1>{announcement.current}</h1>
       <Suspense fallback={<p>...wait for it.</p>}>
+        <Placeholder />
         <Text message={message} />
+        <Placeholder />
       </Suspense>
       <Suspense fallback={<p>...wait for the loud version it.</p>}>
         <LoudText message={message} />
       </Suspense>
     </div>
-  );
+  ));
 }
 
 interface TextModel {
@@ -55,7 +62,7 @@ function Text({ message }: TextModel) {
     console.log('Text: Starting expensive process...');
     return () => console.log('Text: Expensive process cleaned up');
   });
-  return () => <p>{message.current}</p>;
+  return r(() => <p>{message.current}</p>);
 }
 
 function LoudText({ message }: TextModel) {
@@ -65,7 +72,17 @@ function LoudText({ message }: TextModel) {
     return () => console.log('LoudText: Expensive process cleaned up');
   });
   const loudMessage = message.current + '!';
-  return () => <p>{loudMessage}</p>;
+  return r(() => <p>{loudMessage}</p>);
+}
+
+function Placeholder() {
+  observe(function neverCleanup() {
+    console.log('Placeholder: Start');
+    return () => console.log(`Placeholder: Cleanup`);
+  });
+  return r(() => (
+      <p>Just some text</p>
+  ));
 }
 
 function delay<T = any>() {
@@ -75,7 +92,7 @@ function delay<T = any>() {
 }
 
 const meta: Meta<Props> = {
-  title: 'Advanced App',
+  title: 'Suspense',
   component: App,
   parameters: {
     controls: { expanded: true },
