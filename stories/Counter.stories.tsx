@@ -1,8 +1,5 @@
 /** @jsxImportSource ../src */
-
-import React from 'react';
 import { Meta, Story } from '@storybook/react';
-
 import { r, ref } from '../src';
 
 interface Props {

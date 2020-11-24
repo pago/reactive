@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+/** @jsxImportSource ../src */
+import { useState } from 'react';
 import { Meta, Story } from '@storybook/react';
-
-import { wrap } from '../src';
 
 interface Props {
   step: number;
 }
 
-const Counter = wrap(function Counter(props: Props) {
+const Counter = function Counter(props: Props) {
   const [count, setCount] = useState(0);
 
   return (
@@ -29,7 +28,7 @@ const Counter = wrap(function Counter(props: Props) {
       </div>
     </div>
   );
-});
+};
 
 const meta: Meta<Props> = {
   title: 'NonReactiveCounter',

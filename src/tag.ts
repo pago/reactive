@@ -82,6 +82,7 @@ export class SubscriptionController {
   private isSubscribed = false;
   private lastRevision: Revision = 0;
   effect: Effect;
+  cleanup?: Effect;
   constructor(effect: Effect) {
     this.effect = effect;
   }
@@ -130,6 +131,7 @@ export class SubscriptionController {
       return;
     }
     this.unsubscribeFromTags();
+    if (this.cleanup) this.cleanup();
     this.isSubscribed = false;
   }
 }
@@ -172,80 +174,48 @@ export function memoize<T>(
   };
 }
 
-export interface Subscription {
-  unsubscribe(): void;
-}
-
-let subscriptions: Array<Subscription> | undefined;
-export function collectSubscriptions<T>(fn: () => T) {
+let subscriptions: Array<SubscriptionController> | undefined;
+export function collectSubscriptions<T>(
+  fn: () => T
+): Array<SubscriptionController> {
   const oldSubscriptions = subscriptions;
-  let subs = (subscriptions = [] as Array<Subscription>);
-  let previousComputation = currentComputation;
-  currentComputation = new Set();
-  let success = false;
+  let subs = (subscriptions = [] as Array<SubscriptionController>);
   try {
     fn();
-    success = true;
   } finally {
-    if (success) {
-      const lastTags = Array.from(currentComputation);
-
-      if (lastTags.length > 0) {
-        lastTags.forEach(tag => {
-          previousComputation?.add(tag);
-        });
-      }
-    } else {
-      // execution failed, cleanup subscriptions
-      subs.forEach(subscription => subscription.unsubscribe());
-      subs = [];
-    }
     subscriptions = oldSubscriptions;
-    currentComputation = previousComputation;
   }
   return subs;
 }
 
-export function observe(fn: () => Effect | void): Subscription {
-  let lastTags: Tag[] | undefined;
-  let cleanup: Effect | undefined;
-
-  const subscription = {
-    unsubscribe() {
-      lastTags?.forEach(tag => {
-        tag.unsubscribe(effect);
-      });
-      cleanup?.();
-    },
-  };
-  subscriptions?.push(subscription);
-
-  function effect() {
-    cleanup?.();
-    let previousComputation = currentComputation;
-    currentComputation = new Set();
-
-    try {
-      cleanup = fn() as Effect;
-    } finally {
-      // TODO: unsubscribe only from those that are not needed anymore
-      lastTags?.forEach(tag => {
-        tag.unsubscribe(effect);
-      });
-      lastTags = Array.from(currentComputation);
-
-      if (lastTags.length > 0) {
-        lastTags.forEach(tag => {
-          previousComputation?.add(tag);
-          tag.subscribe(effect);
-        });
-      }
-
-      currentComputation = previousComputation;
-    }
+export function watchEffect(
+  fn: (onInvalidate: (teardown: Effect) => void) => void
+): Effect {
+  const controller = new SubscriptionController(effect);
+  function onInvalidate(teardown: Effect) {
+    controller.cleanup = () => {
+      teardown();
+      controller.cleanup = undefined;
+    };
   }
-
+  const run = memoize(() => fn(onInvalidate), controller);
   effect();
 
-  return subscription;
+  if (subscriptions) {
+    subscriptions.push(controller);
+  } else {
+    controller.subscribe();
+  }
+
+  function effect() {
+    if (controller.cleanup) controller.cleanup();
+    run();
+    // TODO: Architectural Decision
+    // At the moment if `fn` succeeds at least once in execution
+    // we will setup a subscription and every subsequent update of a tag
+    // will cause it to be re-evaluated.
+    // Q: Should it instead unsubscribe? Or is ok to retry once new data is in?
+  }
+
+  return () => controller.unsubscribe();
 }

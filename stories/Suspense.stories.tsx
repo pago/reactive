@@ -1,14 +1,12 @@
 /** @jsxImportSource ../src */
-
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { Meta, Story } from '@storybook/react';
 
-import {observe, r, ref} from '../src';
+import {effect, r, ref, watchEffect} from '../src';
 
 interface Props {}
 
 function getSuspendedValue() {
-  //   const value = ref(0);
   const { resolve, signal } = delay();
   let value: string;
   let isResolved = false;
@@ -25,7 +23,6 @@ function getSuspendedValue() {
         throw signal;
       }
       return value;
-      //return value.current;
     },
   };
 }
@@ -34,9 +31,11 @@ function App() {
   const message = getSuspendedValue();
   const announcement = ref(`"Random" message of the day...`);
 
-  setTimeout(() => {
-    announcement.current = 'Halfway there...';
-  }, 500)
+  effect(function startTimer() {
+    setTimeout(() => {
+      announcement.current = 'Halfway there...';
+    }, 500);
+  });
 
   return r(() => (
     <div>
@@ -58,27 +57,27 @@ interface TextModel {
 }
 function Text({ message }: TextModel) {
   console.log('Text: Mounting component');
-  observe(() => {
+  watchEffect((onInvalidate) => {
     console.log('Text: Starting expensive process...');
-    return () => console.log('Text: Expensive process cleaned up');
+    onInvalidate(() => console.log('Text: Expensive process cleaned up'));
   });
   return r(() => <p>{message.current}</p>);
 }
 
 function LoudText({ message }: TextModel) {
   console.log(`LoudText: Mounting component`);
-  observe(() => {
+  watchEffect((onInvalidate) => {
     console.log('LoudText: Starting expensive process...');
-    return () => console.log('LoudText: Expensive process cleaned up');
+    onInvalidate(() => console.log('LoudText: Expensive process cleaned up'));
   });
   const loudMessage = message.current + '!';
   return r(() => <p>{loudMessage}</p>);
 }
 
 function Placeholder() {
-  observe(function neverCleanup() {
+  watchEffect(function logMounting(onInvalidate) {
     console.log('Placeholder: Start');
-    return () => console.log(`Placeholder: Cleanup`);
+    onInvalidate(() => console.log(`Placeholder: Cleanup`));
   });
   return r(() => (
       <p>Just some text</p>

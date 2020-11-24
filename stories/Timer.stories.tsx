@@ -1,33 +1,30 @@
 /** @jsxImportSource ../src */
-
-import React from 'react';
 import { Meta, Story } from '@storybook/react';
-
-import { wrap, ref, observe } from '../src';
+import {ref, effect, r} from '../src';
 
 interface Props {
   step: number;
   delay: number;
 }
 
-const Timer = wrap(function Timer(props: Props) {
+const Timer = function Timer(props: Props) {
   const count = ref(0);
 
-  observe(function incrementEffect() {
+  effect(onInvalidate => {
     const timer = setInterval(() => {
       // update is needed because we are reading from and writing to count
       count.update(current => current + props.step);
     }, props.delay);
 
-    return () => clearInterval(timer);
+    onInvalidate(() => clearInterval(timer));
   });
 
-  return () => (
+  return r(() => (
     <div>
       <div>Count: {count.current}</div>
     </div>
-  );
-});
+  ));
+};
 
 const meta: Meta<Props> = {
   title: 'Timer',

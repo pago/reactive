@@ -1,9 +1,7 @@
 /** @jsxImportSource ../src */
-
-import React, { createContext, useContext } from 'react';
+import { createContext, useContext } from 'react';
 import { Meta, Story } from '@storybook/react';
-
-import { observe, toRefs, r } from '../src';
+import { toRefs, r, watchEffect } from '../src';
 
 const ColorContext = createContext({ current: 'red' });
 
@@ -12,7 +10,7 @@ interface Props {
 }
 
 function App(props: Props) {
-  observe(() => {
+  watchEffect(() => {
     console.log(`New color: "${props.color}"`);
   });
   const { color } = toRefs(props);

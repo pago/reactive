@@ -22,21 +22,22 @@ We are roughly following planning to go through the following steps:
 - [ ] Make it small
 - [ ] Stable release
 
-## Current Status
+## Current State of the Project
 - [x] Works with Preact & React
 - [x] Very little boilerplate on top of React (JS: none, TS: minimal `r`)
 - [x] Observable values
 - [x] Efficient derived values
 - [x] Works with Suspense
 - [x] Works with React.Context (through `inject`)
+- [x] Concurrent Mode Safe (!) (as far as I can see, Expert review would be great)
+- [x] Reuse your existing Hooks in a Reactive Component through `fromHook`
 - [x] Doesn't show any wrapper components in React DevTools
 - [x] Perfect for incremental adoption into existing projects (use the pragma comment for per-file adoption)
 - [ ] `ref` has an `update` method when deriving a new value from an old. If it sticks, it should be possible to use with `reactive`, `toRef` and `toRefs` as well. The current `reactive` implementation is mostly needed for `props` handling (readonly).
 - [ ] Related to the above: `reactive` in Vue accepts and bends over `ref` values. Should we do the same? How would that look like in TypeScript?
 - [ ] TypeScript: Do we really need `r`? Can we adapt the `JSX.Element['type']` property to include our kind of components?
-- [ ] Do we want React Hooks interop? Can we have it? (special implementation for Context, similar concept should work with everything else, too)
 - [ ] If we want to have an excellent incremental adoption strategy, do we also need a Hook that takes a `ref` to enable usage in Hooks components?
-- [ ] Lifecycle callbacks (do we really need them?)
+- [ ] Lifecycle callbacks (do we really need them? All can be replicated in user-land if needed)
 - [ ] Svelte-style store API (drop it? merge useful aspects in?)
 - [ ] Rx.js interop? Useful?
 - [ ] Optimized Preact implementation (by tapping into its plugin API)
@@ -75,7 +76,7 @@ function Counter(props) {
 
 ```tsx
 /** @jsxImportSource @pago/reactive */
-import { r, ref, observe } from '@pago/reactive';
+import { r, ref, effect } from '@pago/reactive';
 
 interface Props {
   step: number;
@@ -85,13 +86,13 @@ interface Props {
 function Timer(props: Props) {
   const count = ref(0);
 
-  observe(function incrementEffect() {
+  effect(onInvalidate => {
     const timer = setInterval(() => {
       // update is needed because we are reading from and writing to count
       count.update(current => current + props.step);
     }, props.delay);
-
-    return () => clearInterval(timer);
+  
+    onInvalidate(() => clearInterval(timer));
   });
 
   return r(() => (
@@ -141,21 +142,18 @@ As specified in [the babel documentation](https://babeljs.io/docs/en/babel-plugi
 
 ### Is this ready for production?
 
-... no.
+Not yet.
 
 ### Why `ref().current` instead of `ref().value`?
 
 Because it allows us to do this:
 
 ```jsx
-import { ref, observe } from '@pago/reactive';
+import { ref, effect } from '@pago/reactive';
 
 function CounterComponent() {
   const el = ref();
-  observe(function updateDOMManually() {
-    // `observe` is currently invoked immediately, rather than at the next tick
-    // not sure if that behaviour is better or worse than delaying it a bit
-    if (!el.current) return;
+  effect(function updateDOMManually() {
     el.current.innerHTML = 'Hello World';
   });
   return () => <div ref={el}></div>;
@@ -167,14 +165,11 @@ function CounterComponent() {
 When you try to use a component like the one below with TypeScript in JSX, it'll inform you that
 `() => Element` is not a valid type for a JSX Element.
 ```tsx
-import { ref, observe } from '@pago/reactive';
+import { ref, effect } from '@pago/reactive';
 
 function CounterComponent() {
   const el = ref();
-  observe(function updateDOMManually() {
-    // `observe` is currently invoked immediately, rather than at the next tick
-    // not sure if that behaviour is better or worse than delaying it a bit
-    if (!el.current) return;
+  effect(function updateDOMManually() {
     el.current.innerHTML = 'Hello World';
   });
   return () => <div ref={el}></div>;
@@ -202,13 +197,10 @@ function CounterComponent() {
 An alternative would be to use the `wrap` function explicitly.
 
 ```tsx
-import { wrap, ref, observe } from '@pago/reactive';
+import { wrap, ref, effect } from '@pago/reactive';
 const CounterComponent = wrap(function CounterComponent() {
   const el = ref();
-  observe(function updateDOMManually() {
-    // `observe` is currently invoked immediately, rather than at the next tick
-    // not sure if that behaviour is better or worse than delaying it a bit
-    if (!el.current) return;
+  effect(function updateDOMManually() {
     el.current.innerHTML = 'Hello World';
   });
   return () => <div ref={el}></div>;

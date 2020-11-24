@@ -1,6 +1,6 @@
 import { ref } from './reactive';
 
-export interface Setter<T> {
+interface Setter<T> {
   (value: T): void;
 }
 

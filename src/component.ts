@@ -1,26 +1,27 @@
-import React, {
+import {
   useEffect,
   useRef,
   useState,
   useContext,
-  useCallback,
   MutableRefObject,
   Context,
   ReactElement,
 } from 'react';
-import { memoize, reactive, ref, Subscription } from './index';
+import { reactive, Ref, ref } from './reactive';
 import { mergePropsIntoReactive } from './utils';
-import { collectSubscriptions, SubscriptionController } from './tag';
+import {
+  memoize,
+  collectSubscriptions,
+  SubscriptionController,
+  watchEffect,
+} from './tag';
 
 type RenderResult = ReactElement<any, any> | null;
 type RenderFunction = () => RenderResult;
 
-interface UsedContext<T> {
-  ref: { current: T };
-  context: Context<T>;
-}
+type Effect = () => void;
 
-let currentContexts: undefined | Array<UsedContext<any>>;
+let currentEffects: undefined | Array<Effect>;
 export function wrap<T extends object>(
   construct: (props: T) => RenderFunction | RenderResult
 ) {
@@ -29,8 +30,10 @@ export function wrap<T extends object>(
     const [, forceRender] = useState(0);
     const reactiveProps = useRef<T>() as MutableRefObject<T>;
     const render = useRef() as MutableRefObject<RenderFunction>;
-    const subscriptions = useRef() as MutableRefObject<Array<Subscription>>;
-    const usedContexts = useRef([] as Array<UsedContext<any>>);
+    const subscriptions = useRef() as MutableRefObject<
+      Array<SubscriptionController>
+    >;
+    const hooks = useRef([] as Array<Effect>);
     const [subscriptionController] = useState(
       () =>
         new SubscriptionController(function dependenciesInvalidated() {
@@ -40,21 +43,12 @@ export function wrap<T extends object>(
 
     useEffect(() => {
       subscriptionController.subscribe();
-      return () => subscriptionController.unsubscribe();
-    }, [subscriptionController]);
-
-    const cleanupSubscriptions = useCallback(() => {
-      subscriptions.current?.forEach(subscription => {
-        subscription.unsubscribe();
-      });
-    }, [subscriptions]);
-
-    useEffect(
-      function cleanup() {
-        return cleanupSubscriptions;
-      },
-      [cleanupSubscriptions]
-    );
+      subscriptions.current.forEach(controller => controller.subscribe());
+      return () => {
+        subscriptionController.unsubscribe();
+        subscriptions.current.forEach(controller => controller.unsubscribe());
+      };
+    }, [subscriptionController, subscriptions]);
 
     if (!isReactiveComponent.current) {
       return construct(props) as RenderResult;
@@ -68,8 +62,8 @@ export function wrap<T extends object>(
 
     if (!render.current) {
       subscriptions.current = collectSubscriptions(() => {
-        const oldContexts = currentContexts;
-        currentContexts = usedContexts.current;
+        const oldEffects = currentEffects;
+        currentEffects = hooks.current;
         try {
           const doRender = construct(reactiveProps.current);
           if (typeof doRender !== 'function') {
@@ -79,45 +73,39 @@ export function wrap<T extends object>(
             render.current = memoize(doRender, subscriptionController);
           }
         } finally {
-          currentContexts = oldContexts;
+          currentEffects = oldEffects;
         }
       });
     } else {
       // during initial construction all contexts will have an up to date value anyways
       // but when we are re-rendering the context values might be stale
-      usedContexts.current.forEach(({ ref, context }) => {
-        ref.current = useContext(context); // eslint-disable-line react-hooks/rules-of-hooks
-      });
+      hooks.current.forEach(fn => fn());
     }
 
-    let success = false;
-    try {
-      const renderResult = render.current();
-      success = true;
-      return renderResult;
-    } finally {
-      if (!success) {
-        cleanupSubscriptions();
-      }
-    }
+    return render.current();
   }
   ReactiveComponent.displayName =
     (construct as any).displayName || construct.name;
   return ReactiveComponent;
 }
 
-export function inject<T>(context: Context<T>) {
-  if (!currentContexts) {
-    throw new Error(
-      `Tried to inject a context "${context.displayName}" when not within a component.`
-    );
-  }
-  const contextValue = ref(useContext(context)); // eslint-disable-line react-hooks/rules-of-hooks
-  currentContexts.push({
-    ref: contextValue,
-    context,
+export function effect(fn: (onInvalidate: (teardown: Effect) => void) => void) {
+  fromHook(function MyEffect() {
+    useEffect(() => watchEffect(fn), []);
   });
-  return contextValue;
+}
+
+export function fromHook<T>(fn: () => T): Ref<T> {
+  if (!currentEffects) {
+    throw new Error(`Tried to execute a hook when not within a component.`);
+  }
+  const value = ref(fn());
+  currentEffects.push(() => (value.current = fn()));
+  return value;
+}
+
+export function inject<T>(context: Context<T>) {
+  return fromHook(() => useContext(context));
 }
 
 /**
@@ -126,16 +114,4 @@ export function inject<T>(context: Context<T>) {
  */
 export function r(render: () => JSX.Element) {
   return (render as unknown) as JSX.Element;
-}
-
-const map = new WeakMap();
-export function createElement(type: any, ...rest: any[]) {
-  if (!('prototype' in type && type.prototype.render)) {
-    // it's a function component
-    if (!map.has(type)) {
-      map.set(type, wrap(type));
-    }
-    type = map.get(type);
-  }
-  return React.createElement(type, ...rest);
 }

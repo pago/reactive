@@ -22,7 +22,7 @@
     "build-storybook": "build-storybook"
   },
   "peerDependencies": {
-    "react": ">=16"
+    "react": ">=17"
   },
   "husky": {
     "hooks": {
@@ -68,10 +68,14 @@
     "tslib": "^2.0.3",
     "typescript": "^4.1.2"
   },
-  "dependencies": {},
+  "dependencies": {
+    "prettier": "^1.19.1"
+  },
   "resolutions": {
-    "**/typescript": "^4.0.5",
+    "**/typescript": "^4.1.2",
     "**/@typescript-eslint/eslint-plugin": "^4.6.1",
-    "**/@typescript-eslint/parser": "^4.6.1"
+    "**/@typescript-eslint/parser": "^4.6.1",
+    "**/ts-jest": "^26.4.4",
+    "**/jest": "^26.6.3"
   }
 }

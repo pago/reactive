@@ -1,15 +1,12 @@
 /** @jsxImportSource ../src */
-
-import React from 'react';
 import { Meta, Story } from '@storybook/react';
-
-import { ref } from '../src';
+import {r, ref} from '../src';
 
 interface Props {
   step: number;
 }
 
-function useCounterViewModel(props) {
+function useCounterViewModel(props: Props) {
   const count = ref(0);
 
   return {
@@ -28,7 +25,7 @@ function useCounterViewModel(props) {
 function Counter(props: Props) {
   const counterModel = useCounterViewModel(props);
 
-  return () => (
+  return r(() => (
     <div>
       <div>Count: {counterModel.count}</div>
       <div>
@@ -40,7 +37,7 @@ function Counter(props: Props) {
         </button>
       </div>
     </div>
-  );
+  ));
 }
 
 const meta: Meta<Props> = {
