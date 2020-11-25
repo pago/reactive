@@ -13,7 +13,13 @@ Please don't use this in production. We are looking for feedback and observation
 We fully expect to change major parts of the API in various different ways while we try to find the right set
 of primitives and abstractions to have a good balance between power and ease of learning.
 
+If you would like to play around with the library:
+
+- [CodeSandbox Template](https://codesandbox.io/s/pagoreactive-playground-zx34h)
+- [Next.js Integration](./examples/nextjs/)
+
 ## Project Plan
+
 We are roughly following planning to go through the following steps:
 
 - [x] Make it work
@@ -23,6 +29,7 @@ We are roughly following planning to go through the following steps:
 - [ ] Stable release
 
 ## Current State of the Project
+
 - [x] Works with Preact & React
 - [x] Very little boilerplate on top of React (JS: none, TS: minimal `r`)
 - [x] Observable values
@@ -38,7 +45,6 @@ We are roughly following planning to go through the following steps:
 - [ ] TypeScript: Do we really need `r`? Can we adapt the `JSX.Element['type']` property to include our kind of components?
 - [ ] If we want to have an excellent incremental adoption strategy, do we also need a Hook that takes a `ref` to enable usage in Hooks components?
 - [ ] Lifecycle callbacks (do we really need them? All can be replicated in user-land if needed)
-- [ ] Svelte-style store API (drop it? merge useful aspects in?)
 - [ ] Rx.js interop? Useful?
 - [ ] Optimized Preact implementation (by tapping into its plugin API)
 - [ ] Documentation
@@ -91,7 +97,7 @@ function Timer(props: Props) {
       // update is needed because we are reading from and writing to count
       count.update(current => current + props.step);
     }, props.delay);
-  
+
     onInvalidate(() => clearInterval(timer));
   });
 
@@ -104,15 +110,18 @@ function Timer(props: Props) {
 ```
 
 ## Setup
+
 The easiest way to setup `@pago/reactive` for either React or Preact is to leverage the new `jsxImportSource` option and to set it to `@pago/reactive`.
 
 Requirements:
+
 - React 17 or later
 - or Preact (todo: insert correct version)
 - Babel (todo: insert correct version)
 - or TypeScript (todo: insert correct version)
 
 ### Per file
+
 Specifying `@pago/reactive` as the JSX factory can be done using a comment at the beginning of the file. This should be supported by Babel & TypeScript.
 
 ```js
@@ -122,6 +131,7 @@ Specifying `@pago/reactive` as the JSX factory can be done using a comment at th
 ### Babel
 
 As specified in [the babel documentation](https://babeljs.io/docs/en/babel-plugin-transform-react-jsx):
+
 ```json
 {
   "plugins": [
@@ -135,8 +145,6 @@ As specified in [the babel documentation](https://babeljs.io/docs/en/babel-plugi
   ]
 }
 ```
-
-
 
 ## Q & A
 
@@ -164,6 +172,7 @@ function CounterComponent() {
 
 When you try to use a component like the one below with TypeScript in JSX, it'll inform you that
 `() => Element` is not a valid type for a JSX Element.
+
 ```tsx
 import { ref, effect } from '@pago/reactive';
 
