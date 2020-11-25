@@ -36,7 +36,7 @@
     "singleQuote": true,
     "trailingComma": "es5"
   },
-  "name": "reactive",
+  "name": "@pago/reactive",
   "author": "Patrick Gotthardt",
   "module": "dist/reactive.esm.js",
   "size-limit": [
