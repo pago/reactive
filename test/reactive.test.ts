@@ -1,4 +1,4 @@
-import { memoize, ref, reactive, toRefs } from '../src/';
+import { memoize, ref, reactive, toRefs, readonly } from '../src/';
 
 describe('memoize', () => {
   test('it executes the function again when a ref is modified', () => {
@@ -113,5 +113,17 @@ describe('memoize', () => {
     greeting.current = 'Hello';
     expect(fn()).toEqual('Hello World');
     expect(state.greeting).toEqual('Hello');
+  });
+
+  test('reactive converts refs to object', () => {
+    // this test validates that `reactive` will pass changes through to the embedded `ref` objects
+    const value = ref('hello');
+    const state = reactive({
+      value,
+    });
+    const print = readonly(value);
+    expect(print.current).toBe('hello');
+    state.value = 'ciao';
+    expect(print.current).toBe('ciao');
   });
 });

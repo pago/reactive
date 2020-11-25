@@ -1,5 +1,7 @@
 # @pago/reactive
 
+[API Docs](./docs/api/reactive.md) | [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h) | [Next.js Example](./examples/nextjs/) | [Examples](./stories)
+
 You are using React or Preact but find yourself frustrated by continuous bugs, errors or ceremony caused by
 the Hooks API? You thought you could avoid using a separate state management library like Redux, Recoil or MobX
 but started to run into unexpected performance issues with the Context API?
@@ -24,9 +26,9 @@ We are roughly following planning to go through the following steps:
 
 - [x] Make it work
 - [ ] Make it good (<-- we are here)
+- [ ] Stable release
 - [ ] Make it fast
 - [ ] Make it small
-- [ ] Stable release
 
 ## Current State of the Project
 
@@ -38,14 +40,12 @@ We are roughly following planning to go through the following steps:
 - [x] Works with React.Context (through `inject`)
 - [x] Concurrent Mode Safe (!) (as far as I can see, Expert review would be great)
 - [x] Reuse your existing Hooks in a Reactive Component through `fromHook`
+- [x] Reuse `ref` values in Hooks components through `useRefValue`
 - [x] Doesn't show any wrapper components in React DevTools
 - [x] Perfect for incremental adoption into existing projects (use the pragma comment for per-file adoption)
-- [ ] `ref` has an `update` method when deriving a new value from an old. If it sticks, it should be possible to use with `reactive`, `toRef` and `toRefs` as well. The current `reactive` implementation is mostly needed for `props` handling (readonly).
-- [ ] Related to the above: `reactive` in Vue accepts and bends over `ref` values. Should we do the same? How would that look like in TypeScript?
 - [ ] TypeScript: Do we really need `r`? Can we adapt the `JSX.Element['type']` property to include our kind of components?
-- [ ] If we want to have an excellent incremental adoption strategy, do we also need a Hook that takes a `ref` to enable usage in Hooks components?
 - [ ] Lifecycle callbacks (do we really need them? All can be replicated in user-land if needed)
-- [ ] Rx.js interop? Useful?
+- [ ] Rx.js interop? Useful? How do we handle subscriptions?
 - [ ] Optimized Preact implementation (by tapping into its plugin API)
 - [ ] Documentation
 - [ ] Consistent naming of things (so far copied Vue API for a lot of things - do the names match & make sense in this context?)

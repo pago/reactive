@@ -13,21 +13,24 @@
   },
   "scripts": {
     "start": "tsdx watch",
-    "build": "tsdx build",
+    "build": "tsdx build && yarn docs:extract && yarn docs:generate",
     "test": "tsdx test --passWithNoTests",
     "lint": "tsdx lint",
+    "docs:extract": "api-extractor run --local",
+    "docs:generate": "api-documenter markdown -i ./temp -o ./docs/api",
     "prepare": "tsdx build",
     "size": "size-limit",
     "analyze": "size-limit --why",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "release": "yarn test && yarn build && npm publish --access public"
   },
   "peerDependencies": {
     "react": ">=17"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "tsdx lint"
+      "pre-commit": "yarn lint"
     }
   },
   "prettier": {
@@ -51,6 +54,8 @@
   ],
   "devDependencies": {
     "@babel/core": "^7.12.7",
+    "@microsoft/api-documenter": "^7.11.0",
+    "@microsoft/api-extractor": "^7.12.0",
     "@size-limit/preset-small-lib": "^4.9.0",
     "@storybook/addon-essentials": "^6.1.2",
     "@storybook/addon-info": "^5.3.21",

@@ -1,13 +1,14 @@
-/** @jsxImportSource ../src */
-import { useState } from 'react';
+import { useRef } from 'react';
 import { Meta, Story } from '@storybook/react';
+import { useRefValue, ref } from '../src';
 
 interface Props {
   step: number;
+  count: any; // TODO: Need a way to properly export & import types
 }
 
 const Counter = function Counter(props: Props) {
-  const [count, setCount] = useState(0);
+  const count = useRefValue(props.count);
 
   return (
     <div>
@@ -15,13 +16,13 @@ const Counter = function Counter(props: Props) {
       <div>
         <button
           type="button"
-          onClick={() => setCount(current => current + props.step)}
+          onClick={() => (props.count.current += props.step)}
         >
           Increment
         </button>
         <button
           type="button"
-          onClick={() => setCount(current => current - props.step)}
+          onClick={() => (props.count.current -= props.step)}
         >
           Decrement
         </button>
@@ -30,9 +31,14 @@ const Counter = function Counter(props: Props) {
   );
 };
 
+function App(props: Props) {
+  const count = useRef(ref(0)); // little bit of inception here... :)
+  return <Counter count={count.current} step={props.step} />;
+}
+
 const meta: Meta<Props> = {
   title: 'NonReactiveCounter',
-  component: Counter,
+  component: App,
   parameters: {
     controls: { expanded: true },
   },
@@ -40,7 +46,7 @@ const meta: Meta<Props> = {
 
 export default meta;
 
-const Template: Story<Props> = args => <Counter {...args} />;
+const Template: Story<Props> = args => <App {...args} />;
 
 // By passing using the Args format for exported stories, you can control the props for a component for reuse in a test
 // https://storybook.js.org/docs/react/workflows/unit-testing

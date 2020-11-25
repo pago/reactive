@@ -22,6 +22,18 @@ const withFactory = (factory: (...args: any) => JSX.Element) => (
   return factory(type, ...rest);
 };
 
+/**
+ * An interceptor for the standard React `jsx` function from the `react/jsx-runtime` package.
+ * @public
+ */
 export const jsx = withFactory(_jsx);
+/**
+ * An interceptor for the standard React `jsxs` function from the `react/jsx-runtime` package.
+ * @public
+ */
 export const jsxs = withFactory(_jsxs);
+/**
+ * An interceptor for the standard React `createElement` function from the `react` package.
+ * @public
+ */
 export const createElement = withFactory(_createElement);

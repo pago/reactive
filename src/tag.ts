@@ -27,7 +27,11 @@ function drainQueue() {
   scheduledEffects.forEach(effect => effect());
 }
 
-interface Effect {
+/**
+ * A function that represents a pure side effect with no input and no output.
+ * @public
+ */
+export interface Effect {
   (): void;
 }
 
@@ -77,16 +81,37 @@ function getMax(tags: Tag[]) {
   return Math.max(...tags.map(t => t[REVISION]));
 }
 
+/**
+ * Manages the subscription to tracked references and objects within a `memoized` function.
+ * @public
+ */
 export class SubscriptionController {
   private tags: Array<Tag> = [];
   private isSubscribed = false;
   private lastRevision: Revision = 0;
+  /**
+   * The effect that is triggered whenever a tracked value changes after the controller
+   * has subscribed to changes.
+   */
   effect: Effect;
+  /**
+   * A cleanup effect that should be executed before the effect is executed again or
+   * on unsubscribe.
+   */
   cleanup?: Effect;
+  /**
+   * Creates a new SubscriptionController.
+   * @param effect - The effect that should be executed whenever a tracked reference was changed.
+   */
   constructor(effect: Effect) {
     this.effect = effect;
   }
 
+  /**
+   * @internal
+   * @param tags - The new tags
+   * @param lastRevision - The last revision of the tags
+   */
   setObservedTags(tags: Array<Tag>, lastRevision: Revision) {
     if (this.isSubscribed) {
       this.unsubscribeFromTags();
@@ -105,6 +130,11 @@ export class SubscriptionController {
     this.tags.forEach(tag => tag.unsubscribe(this.effect));
   }
 
+  /**
+   * Subscribes to the set of tracked references and objects.
+   * Once subscribed, the {@link SubscriptionController.effect} will be triggered whenever
+   * any of the values change.
+   */
   subscribe() {
     if (this.isSubscribed) {
       return;
@@ -126,6 +156,9 @@ export class SubscriptionController {
     }
   }
 
+  /**
+   * Unsubscribes from all tracked values.
+   */
   unsubscribe() {
     if (!this.isSubscribed) {
       return;
@@ -136,6 +169,23 @@ export class SubscriptionController {
   }
 }
 
+/**
+ * Returns a function that is only executed again if any of its tracked values have changed.
+ * The `controller` can be used to establish a notification system and is largely irrelevant to end users of the API.
+ *
+ * @example
+ * ```
+ * const person = ref('Preact');
+ * const message = memoize(() => `Hello ${person.current}`);
+ *
+ * console.log(message()); // => 'Hello Preact'
+ * console.log(message()); // => 'Hello Preact', but this time the memoized function was not executed at all
+ * ```
+ *
+ * @param fn - A memoized function.
+ * @param controller - A controller that can be used to manage subscribing to tracked values.
+ * @public
+ */
 export function memoize<T>(
   fn: () => T,
   controller?: SubscriptionController
@@ -188,6 +238,44 @@ export function collectSubscriptions<T>(
   return subs;
 }
 
+/**
+ * Executes the given effect immediately and tracks any used values.
+ * When any of them change, it will execute the effect again.
+ * If a `teardown` function has been registered through the `onInvalidate` param,
+ * it will be executed before the effect is executed again, allowing for cleanup.
+ *
+ * @remarks
+ * When using this function within a Reactive Component, make sure to not rely on any custom `teardown` logic.
+ *
+ * When this function is used within a Reactive Component, the tracking will be bound to the components lifecycle.
+ * It is, therefore, save to use and can be considered side effect free (and thus React Concurrent Mode compatible).
+ * However, there are circumstances that might cause a custom `teardown` function to not be invoked.
+ *
+ * For example, if your component has been rendered but not committed (written to the DOM) then React reserves the right to throw it away without
+ * invoking any cleanup logic.
+ *
+ * ```js
+ * // DO NOT DO THIS
+ * import { watchEffect, ref } from '@pago/reactive';
+ * function Surprise(props) {
+ *  const message = ref('Wait for it...');
+ *  watchEffect(onInvalidate => {
+ *    // This timer will never be cleared
+ *    // if the component is not unmounted
+ *    // or during server side rendering
+ *    // You should use `effect` instead
+ *    const token = setTimeout(() => {
+ *      message.current = 'Hello World!'
+ *    }, props.delay); // props.delay is watched
+ *    onInvalidate(() => clearTimeout(token));
+ *  });
+ *  return () => <p>{message.current}</p>
+ * }
+ * ```
+ *
+ * @param fn - The effect that should be executed when any of the tracked values change.
+ * @public
+ */
 export function watchEffect(
   fn: (onInvalidate: (teardown: Effect) => void) => void
 ): Effect {
