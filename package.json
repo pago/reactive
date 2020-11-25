@@ -5,7 +5,8 @@
   "typings": "dist/index.d.ts",
   "files": [
     "dist",
-    "src"
+    "src",
+    "jsx-runtime"
   ],
   "engines": {
     "node": ">=10"

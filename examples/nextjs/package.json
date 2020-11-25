@@ -1,0 +1,17 @@
+{
+  "name": "learn-starter",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.12.7",
+    "@pago/reactive": "file:../../reactive-v0.0.1-2.tgz",
+    "next": "^10.0.0",
+    "react": "16.13.1",
+    "react-dom": "16.13.1"
+  }
+}
