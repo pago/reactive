@@ -4,7 +4,7 @@ export interface Ref<T> {
   current: T;
 }
 
-export interface ImmutableRef<T> {
+export interface ReadonlyRef<T> {
   readonly current: T;
 }
 
@@ -117,11 +117,15 @@ export function toRef<T extends object, K extends keyof T>(
   };
 }
 
-export function derived<T>(fn: () => T): ImmutableRef<T> {
+export function derived<T>(fn: () => T): ReadonlyRef<T> {
   const calculator = memoize(fn);
   return {
     get current() {
       return calculator();
     },
   };
+}
+
+export function readonly<T>(ref: Ref<T>): ReadonlyRef<T> {
+  return derived(() => ref.current);
 }
