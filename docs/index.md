@@ -1,6 +1,4 @@
-# @pago/reactive - The React API you deserve
-
-## An introduction
+# @pago/reactive - An Introduction
 
 To get started with `@pago/reactive`, you will need to configure Babel, TypeScript or any other compiler to use `@pago/reactive` as the `jsxImportSource`.
 However, we have prepared a [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h) for you so that you can just focus on testing the library,
@@ -8,7 +6,7 @@ rather than having to go through setting it up for your environment. When you ar
 
 So please open up [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h) to get started with `@pago/reactive`.
 
-### A first look at a Reactive Component
+## A first look at a Reactive Component
 
 When you open up the [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h), you will find yourself looking at the `App.js` with a component similar to this:
 
@@ -60,7 +58,7 @@ export default function App() {
 
 This a regular old React Function Component. The very curious people will recognize that we are still using `@pago/reactive` to render JSX. That's fine, `@pago/reactive` is fully compatible with standard React Components and does not interfere with their execution.
 
-### From React to Reactive
+## From React to Reactive
 
 In our first step towards leveraging the power of `@pago/reactive` we want to convert our standard React Component into a Reactive Component.
 The one thing we need to do to make that happen is to return a `render` function instead of the JSX.
@@ -75,7 +73,7 @@ This change converts our standard React Component into a Reactive Component. And
 By converting a React Component into a Reactive Component, we have optimized the rendering of the component in the same way that `React.memo` optimizes your React Components: It will always return the same Virtual DOM tree unless any given property that you are actually using within the `render` function changes.
 In many ways this is actually even better than the optimization offered by `React.memo` because it only tracks properties that you are actually using. If somebody passes in a new property that your component doesn't even accept, that will not cause your component to bail out from optimization.
 
-### The four phases of a Reactive Component Lifecycle
+## The four phases of a Reactive Component Lifecycle
 
 The `@pago/reactive` library has been build with Reacts Concurrent Mode in mind and makes it easy for your code to fit into that execution model.
 Because of that, a Reactive Component has a well defined Lifecycle that consists of four stages:
@@ -122,7 +120,7 @@ You might be wondering why `effect` passes in an `onInvalidate` function rather 
 Reacts `useEffect` does. This way, you can make your effect `async` and leverage `async` / `await` in a straightforward way without requiring
 any tricks on your side.
 
-### Tracked State
+## Tracked State
 
 We have already hinted that properties passed to a Reactive Component are `tracked` and that a change to them will cause the component to render again.
 But `@pago/reactive` wouldn't be very useful if that was all it offered. Instead, it offers ways to create your own `tracked` state through the `ref` and the `reactive` functions.
@@ -199,7 +197,7 @@ function createCounter() {
 
 We could now use this function in any of our Reactive Components and it would just work.
 
-### Beware: Destructuring
+## Beware: Destructuring
 
 When you use destructuring on a `reactive` object, it will loose its reactivity and its values won't be tracked anymore. Thus, you need to first
 convert the object into a `RefContainer` by using the `toRefs` functions.
@@ -218,7 +216,7 @@ function Timer(props) {
 }
 ```
 
-### Global Tracked State
+## Global Tracked State
 
 When you are building a client side only application without server side rendering, you can deal with your
 global state needs by using a global `tracked` state variable.
@@ -248,7 +246,7 @@ export default function App() {
 
 Every component that uses `globalCount` will now be kept in sync automatically.
 
-### State Management with React.Context
+## State Management with React.Context
 
 When Server Side Rendering is a concern for you or you would like to avoid global state for reasons of testability of your code,
 you might want to leverage the React.Context API instead. `@pago/reactive` makes it very easy to use React Context for state management
@@ -302,12 +300,12 @@ To gain access to our Context within a Reactive Component, we use the `inject` f
 Together with the various utility functions in `@pago/reactive`, such as `derived`, `readonly` or `watchEffect`, you might find less of a need to
 reach for libraries like MobX or Recoil in your application.
 
-### Compatibility with Hooks
+## Compatibility with Hooks
 
 There are many useful React Hooks out there that you might want to use in your application. Maybe you are not even writing a new one but have to integrate `@pago/reactive` into your current codebase that is full of existing Hooks.
 As we've discovered right at the beginning, React and Reactive Components can live next to each other without any problems. But can they interact? Can you leverage existing Hooks? Of course you can!
 
-#### Using existing Hooks in Reactive Components
+### Using existing Hooks in Reactive Components
 
 Let's assume that you have a wonderful `useScreenSize` Hook that you would like to use within your Reactive Component.
 All you'll need to do is to pass it to `fromHook`:
@@ -367,7 +365,7 @@ In React, when a Hook signals that it needs to be executed again, the entire com
 all registered Hooks will be triggered but if that doesn't result in an actual change of the state that is `tracked` by
 the `render` function, then no rendering will happen and the old Virtual DOM tree will be reused.
 
-#### Using tracked ref objects in a Hook
+### Using tracked ref objects in a Hook
 
 The example above, compared to its previous purely Reactive Component versions, no longer accepts properties to
 control the delay or the incrementation step. The function passed to `fromHook` is not tracked by default. Instead,
@@ -402,7 +400,7 @@ be invalidated and updated.
 The `useRefValue` function can be used in any React Function Component or React Hook
 and enables React applications to manage their state through `@pago/reactive`.
 
-### Next Steps
+## Next Steps
 
 If you've enjoying reading this introduction, please give it a try in [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h)
 or look through the [examples](../examples) to see how to setup a [Next.js](../examples/nextjs/) project. More examples will follow
