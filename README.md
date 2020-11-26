@@ -1,6 +1,6 @@
 # @pago/reactive
 
-[API Docs](./docs/api/reactive.md) | [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h) | [Next.js Example](./examples/nextjs/) | [Examples](./stories)
+[Introduction](./docs/index.md) | [API Docs](./docs/api/reactive.md) | [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h) | [Next.js Example](./examples/nextjs/) | [Examples](./stories)
 
 You are using React or Preact but find yourself frustrated by continuous bugs, errors or ceremony caused by
 the Hooks API? You thought you could avoid using a separate state management library like Redux, Recoil or MobX
@@ -17,6 +17,7 @@ of primitives and abstractions to have a good balance between power and ease of 
 
 If you would like to play around with the library:
 
+- [Read the Introduction](./docs/index.md)
 - [CodeSandbox Template](https://codesandbox.io/s/pagoreactive-playground-zx34h)
 - [Next.js Integration](./examples/nextjs/)
 
