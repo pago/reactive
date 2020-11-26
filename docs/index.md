@@ -6,6 +6,8 @@ rather than having to go through setting it up for your environment. When you ar
 
 So please open up [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h) to get started with `@pago/reactive`.
 
+Or, if you're already familiar with it, skip to the [API Documentation](./api/reactive.md).
+
 ## A first look at a Reactive Component
 
 When you open up the [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h), you will find yourself looking at the `App.js` with a component similar to this:
@@ -410,4 +412,4 @@ This project is still early on and bugs and issues should be expected. When you 
 open an [report the issue](https://github.com/pago/reactive/issues) on GitHub. That will help us to make the library better and to reach
 production quality.
 
-You can also take a look at the [./api/reactive.md](API Documentation) to learn more about the API offered by `@pago/reactive`.
+You can also take a look at the [API Documentation](./api/reactive.md) to learn more about the API offered by `@pago/reactive`.
