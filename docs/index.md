@@ -2,7 +2,7 @@
 
 To get started with `@pago/reactive`, you will need to configure Babel, TypeScript or any other compiler to use `@pago/reactive` as the `jsxImportSource`.
 However, we have prepared a [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h) for you so that you can just focus on testing the library,
-rather than having to go through setting it up for your environment. When you are ready to integrate it into your setup, you can take a look at the [integration examples](./../examples/).
+rather than having to go through setting it up for your environment. When you are ready to integrate it into your setup, you can take a look at the [integration examples](https://github.com/pago/reactive/tree/main/examples/).
 
 So please open up [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h) to get started with `@pago/reactive`.
 
@@ -405,7 +405,7 @@ and enables React applications to manage their state through `@pago/reactive`.
 ## Next Steps
 
 If you've enjoying reading this introduction, please give it a try in [CodeSandbox](https://codesandbox.io/s/pagoreactive-playground-zx34h)
-or look through the [examples](../examples) to see how to setup a [Next.js](../examples/nextjs/) project. More examples will follow
+or look through the [examples](https://github.com/pago/reactive/tree/main/examples) to see how to setup a [Next.js](https://github.com/pago/reactive/tree/main/examples/nextjs) project. More examples will follow
 over time.
 
 This project is still early on and bugs and issues should be expected. When you encounter anything strange or counter-intuitive, please
