@@ -6,7 +6,8 @@
   "files": [
     "dist",
     "src",
-    "jsx-runtime"
+    "jsx-runtime",
+    "preact"
   ],
   "engines": {
     "node": ">=10"
